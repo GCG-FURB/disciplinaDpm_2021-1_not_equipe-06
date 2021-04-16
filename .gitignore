@@ -365,3 +365,13 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+**/.idea/**
+**/dispositivosmoveis3d/.gradle/**
+**/build/**
+**/gradle.properties
+**/gradlew.bat
+**/gradle-wrapper.jar
+**/gradle-wrapper.properties
+/unidade_3/dispositivosmoveis3d/local.properties
+**/gradlew
+/unidade_3/dispositivosmoveis3d/app/proguard-rules.pro
