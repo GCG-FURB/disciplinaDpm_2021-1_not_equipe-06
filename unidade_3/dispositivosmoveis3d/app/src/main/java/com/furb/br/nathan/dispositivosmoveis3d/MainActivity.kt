@@ -17,6 +17,16 @@ import kotlin.math.abs
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
+    lateinit var mainHandler: Handler
+    lateinit var movableView: View
+    private val moveViewTask = object : Runnable {
+        override fun run() {
+            moveFunction(movableView)
+            mainHandler.postDelayed(this, 200)
+        }
+    }
+
+    private lateinit var sensorManager: SensorManager
     private var currentSensor: Sensor? = null
     private var accuracy = 1
 
@@ -26,34 +36,30 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        setupAccelerometer()
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        setupSensor()
 
-        val movableView = this.findViewById<View>(R.id.moving_view)
-        val mainHandler = Handler(Looper.getMainLooper())
-        mainHandler.post(object : Runnable {
-            override fun run() {
-                moveFunction(movableView)
-                mainHandler.postDelayed(this, 200)
-            }
-        })
+        movableView = this.findViewById<View>(R.id.moving_view)
+        mainHandler = Handler(Looper.getMainLooper())
+        mainHandler.post(moveViewTask)
     }
 
-    private fun setupAccelerometer() {
-        setupSensor(Sensor.TYPE_ACCELEROMETER)
+    override fun onPause() {
+        super.onPause()
+        mainHandler.removeCallbacks(moveViewTask)
+        removeSensorListener()
     }
 
-    private fun setupGyroscope() {
-        setupSensor(Sensor.TYPE_GYROSCOPE)
+    override fun onResume() {
+        super.onResume()
+        mainHandler.post(moveViewTask)
+        setupSensor()
     }
 
-    private fun setupSensor(sensorType: Int) {
-        val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    private fun setupSensor() {
+        removeSensorListener()
 
-        if (currentSensor != null) {
-            sensorManager.unregisterListener(this, currentSensor)
-        }
-
-        val sensor = sensorManager.getDefaultSensor(sensorType)
+        val sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         if (sensor == null) {
             val builder = AlertDialog.Builder(this)
             builder.setMessage("Phone does not have an accelerometer, this function won't work")
@@ -61,6 +67,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME)
         currentSensor = sensor
+    }
+
+    private fun removeSensorListener() {
+        if (currentSensor != null) {
+            sensorManager.unregisterListener(this, currentSensor)
+        }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
