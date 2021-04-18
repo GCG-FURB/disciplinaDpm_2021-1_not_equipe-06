@@ -37,7 +37,7 @@ class MainActivity : AppCompatActivity() {
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         setupAccelerometerSensor()
 
-        movableView = this.findViewById<View>(R.id.moving_view)
+        movableView = this.findViewById(R.id.moving_view)
         mainHandler = Handler(Looper.getMainLooper())
         mainHandler.post(moveViewTask)
     }
