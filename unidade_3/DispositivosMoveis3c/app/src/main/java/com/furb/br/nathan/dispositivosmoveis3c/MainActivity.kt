@@ -1,36 +1,48 @@
 package com.furb.br.nathan.dispositivosmoveis3c
 
+import android.Manifest
+import android.content.ContentValues
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import java.io.File
+import java.io.IOException
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
     private val requestPermissionLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted: Boolean ->
-            if (!isGranted) {
-                showCameraPermissionErrorMessage()
+            registerForActivityResult(
+                    ActivityResultContracts.RequestPermission()
+            ) { isGranted: Boolean ->
+                if (!isGranted) {
+                    showCameraPermissionErrorMessage()
+                }
             }
-        }
 
-    private val registerTakePictureLauncher = registerForActivityResult(
-        ActivityResultContracts.TakePicture()
+    private val takePictureLauncher = registerForActivityResult(
+            ActivityResultContracts.TakePicture()
     ) { isSuccess ->
         Log.d(this.localClassName, isSuccess.toString())
+    }
+
+    private val takeVideoLauncher = registerForActivityResult(
+            ActivityResultContracts.TakeVideo()
+    ) { isSuccess ->
+        
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
         handlePermissionRequest()
     }
 
@@ -38,11 +50,12 @@ class MainActivity : AppCompatActivity() {
         if (hasCameraPermission()) {
             return
         }
-        requestPermissionLauncher.launch(PackageManager.FEATURE_CAMERA)
+
+        requestPermissionLauncher.launch(Manifest.permission.CAMERA)
     }
 
     private fun hasCameraPermission(): Boolean {
-        return checkSelfPermission(PackageManager.FEATURE_CAMERA) == PackageManager.PERMISSION_GRANTED
+        return checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun showCameraPermissionErrorMessage() {
@@ -52,21 +65,48 @@ class MainActivity : AppCompatActivity() {
         builder.create().show()
     }
 
+    fun dispatchTakePictureIntent(view: View) {
+        if (!hasCameraPermission()) {
+            handlePermissionRequest()
+            return
+        }
+
+        takePictureLauncher.launch(createPictureFileUri())
+    }
+
     fun dispatchTakeVideoIntent(view: View) {
         if (!hasCameraPermission()) {
             handlePermissionRequest()
             return
         }
 
-        registerTakePictureLauncher.launch(createPictureFile())
+        takeVideoLauncher.launch(createVideoFileUri())
     }
 
-    private fun createPictureFile(): Uri {
-        val file = File(fileName())
+    private fun createPictureFileUri(): Uri {
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, imageFileName())
+            put(MediaStore.MediaColumns.MIME_TYPE, "jpg")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DCIM)
+        }
 
-        return Uri.fromFile(file)
+        return contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+                ?: throw IOException("Failed to create new MediaStore record.")
     }
 
-    private fun fileName(): String = "Mobile_${Date().time}_pic.png"
+    private fun createVideoFileUri(): Uri {
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, videoFileName())
+            put(MediaStore.MediaColumns.MIME_TYPE, "mp4")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DCIM)
+        }
+
+        return contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)
+                ?: throw IOException("Failed to create new MediaStore record.")
+    }
+
+    private fun imageFileName() = "pics${File.pathSeparatorChar}${fileName()}_pic.jpg"
+    private fun videoFileName() = "pics${File.pathSeparatorChar}${fileName()}_video.mp4"
+    private fun fileName() = "Mobile_${Date().time}"
 
 }
