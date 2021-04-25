@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity() {
     private val takeVideoLauncher = registerForActivityResult(
             ActivityResultContracts.TakeVideo()
     ) { isSuccess ->
-        
+
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -105,8 +105,8 @@ class MainActivity : AppCompatActivity() {
                 ?: throw IOException("Failed to create new MediaStore record.")
     }
 
-    private fun imageFileName() = "pics${File.pathSeparatorChar}${fileName()}_pic.jpg"
-    private fun videoFileName() = "pics${File.pathSeparatorChar}${fileName()}_video.mp4"
+    private fun imageFileName() = "pic_${fileName()}.jpg"
+    private fun videoFileName() = "video_${fileName()}.mp4"
     private fun fileName() = "Mobile_${Date().time}"
 
 }
