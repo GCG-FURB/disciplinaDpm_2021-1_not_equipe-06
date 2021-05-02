@@ -1,5 +1,6 @@
 package com.example.dispositivosmoveis3e
 
+import android.content.ContentValues
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -49,31 +50,65 @@ class FirstFragment : Fragment() {
         view.findViewById<Button>(R.id.button_first2).setOnClickListener{
             salvarInfo(view)
         }
-        atualizarInformacao(view)
+        a(view)
     }
 
-    fun atualizarInformacao(view: View){
+    fun a(view :View){
         var nome  ="";
         var temp ="";
         var desc ="";
+        val textview_first = view.findViewById(R.id.textview_first) as TextView;
+
+        textview_first.text = nome
+
+        val idFirst = view.findViewById( R.id.idFirst )as TextView;
+
+        idFirst.text = desc
+
+
+        val tempe = view.findViewById( R.id.temperatura )as TextView;
+
+        tempe.text = temp
+
+
+        val dbHelper = banco(requireActivity().applicationContext)
+        val db = dbHelper.readableDatabase
+        
+        val cursor = db.query("temperatura",null,"IdTemperatura = 1",null,null,null,null)
+        val itemIds = mutableListOf<Long>()
+        with(cursor) {
+            while (moveToNext()) {
+                nome = getString(getColumnIndexOrThrow("nomeCidade"))
+                temp = getString(getColumnIndexOrThrow("temperatura"))
+                desc = getString(getColumnIndexOrThrow("descricao"))
+            }
+        }
+        textview_first.text = nome
+        idFirst.text = desc
+        tempe.text = temp
+
+    }
+
+
+    fun atualizarInformacao(view: View){
+
 
 
         val textview_first = view.findViewById(R.id.textview_first) as TextView;
 
-        textview_first.text = nome;
-
         val idFirst = view.findViewById( R.id.idFirst )as TextView;
 
-        idFirst.text = desc;
-
-
         val tempe = view.findViewById( R.id.temperatura )as TextView;
+        var nome  =textview_first.text;
+        var temp =idFirst.text ;
+        var desc = idFirst.text;
+
 
         val client = OkHttpClient()
         val url = URL("http://192.168.1.154:3333/0");
 
         val job = runBlocking  {
-
+        try {
             val request = Request.Builder()
                     .url(url)
                     .get()
@@ -89,13 +124,27 @@ class FirstFragment : Fragment() {
             desc = jsonObj.getString("desc")
             temp = jsonObj.getString("temp")
 
-
+        }
+        catch(e:Exception ){
+            // a
+        }
         }
 
         textview_first.text = nome;
 
         idFirst.text = desc;
         tempe.text = temp
+
+        val dbHelper = banco(requireActivity().applicationContext)
+        val db = dbHelper.readableDatabase
+        val values3 = ContentValues().apply {
+            put("nomeCidade",nome.toString())
+            put("temperatura",temp.toString())
+            put("descricao",desc.toString())
+        }
+
+        val count = db.update("temperatura",values3,"IdTemperatura = 1",null)
+
     }
 
     fun salvarInfo(view: View){
@@ -113,13 +162,27 @@ class FirstFragment : Fragment() {
         var body = "{\"nome\": \"${textview_first.text}\",\"temp\":\"${tempe.text}\", \"desc\":\"${idFirst.text}\"}"
 
         val job = runBlocking {
+            try {
+                val request = Request.Builder()
+                        .url(url)
+                        .put(RequestBody.Companion.create("application/json; charset=utf-8".toMediaType(), body))
+                        .build()
 
-            val request = Request.Builder()
-                    .url(url)
-                    .put(RequestBody.Companion.create("application/json; charset=utf-8".toMediaType(),body))
-                    .build()
+                val response = client.newCall(request).execute()
+            }catch(e:Exception ){
+                // a
+            }
+        }
 
-            val response = client.newCall(request).execute()
+        val dbHelper = banco(requireActivity().applicationContext)
+        val db = dbHelper.readableDatabase
+        val values3 = ContentValues().apply {
+            put("nomeCidade",textview_first.text.toString())
+            put("temperatura",tempe.text.toString())
+            put("descricao",idFirst.text.toString())
         }
-        }
+
+        val count = db.update("temperatura",values3,"IdTemperatura = 1",null)
+
+    }
 }
